@@ -13,15 +13,9 @@ object MyModule {
     msg.format(x, abs(x))
   }
 
-  private def formatFib(x: Int) = {
-    val msg = "The %d member of the fibonacci sequence is %d"
-    msg.format(x, fib(x))
-  }
-
-
   def main(args: Array[String]): Unit = {
     println(formatAbs(-42))
-    println(formatFib(5))
+    println(formatResult("fibonacci", 5, fib))
   }
 
   // A definition of factorial, using a local, tail recursive function
@@ -45,8 +39,7 @@ object MyModule {
   // Exercise 1: Write a function to compute the nth fibonacci number
 
   def fib(n: Int): Int = n match {
-    case 1 => n
-    case 2 => n
+    case 1 | 2 => n
     case _ if n > 0 => fib(n-2) + fib(n-1)
   }
 
