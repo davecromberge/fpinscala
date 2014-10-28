@@ -46,11 +46,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   def product2(ns: List[Double]) = 
     foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
-  def tail[A](l: List[A]): List[A] = 
-    l match {
-      case Cons(_, t)  => t
-      case Nil => Nil
-    }
+  def tail[A](l: List[A]): List[A] = drop(l, 1)
 
   def setHead[A](l: List[A], h: A): List[A] = 
     l match {
@@ -59,9 +55,10 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
 
   def drop[A](l: List[A], n: Int): List[A] = 
-    if (n > 0) 
-      drop(tail(l), n-1)
-    else l
+    l match {
+      case Cons(_, t) if n > 0 => drop(t, n-1)
+      case _ => l
+    }
 
   def dropWhile[A](l: List[A], f: A => Boolean): List[A] = 
     l match {
@@ -77,17 +74,9 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
 
   def length[A](l: List[A]): Int = 
-    l match {
-      case Cons(h, t) => 1 + length(t)
-      case _ => 0
-    }
-    
+    foldRight(l, 0)((x, y) => y + 1)
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = 
-    l match {
-      case Nil => z
-      case Cons(h, t) => f(foldLeft(t, z)(f), h)
-    }
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = ???
 
   def map[A,B](l: List[A])(f: A => B): List[B] = 
     l match {
