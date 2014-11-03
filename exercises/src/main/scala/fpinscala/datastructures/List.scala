@@ -5,16 +5,9 @@ case object Nil extends List[Nothing] // A `List` data constructor representing 
 case class Cons[+A](head: A, tail: List[A]) extends List[A] // Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`, which may be `Nil` or another `Cons`.
 
 object List { // `List` companion object. Contains functions for creating and working with lists.
-  def sum(ints: List[Int]): Int = ints match { // A function that uses pattern matching to add up a list of integers
-    case Nil => 0 // The sum of the empty list is 0.
-    case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
-  } 
+  def sum(ints: List[Int]): Int = foldLeft(ints, 0)(_ + _)
   
-  def product(ds: List[Double]): Double = ds match {
-    case Nil => 1.0
-    case Cons(0.0, _) => 0.0
-    case Cons(x,xs) => x * product(xs)
-  }
+  def product(ints: List[Int]): Int = foldLeft(ints, 1)(_ * _)
   
   def apply[A](as: A*): List[A] = // Variadic function syntax
     if (as.isEmpty) Nil
@@ -29,16 +22,10 @@ object List { // `List` companion object. Contains functions for creating and wo
   }
 
   def append[A](a1: List[A], a2: List[A]): List[A] =
-    a1 match {
-      case Nil => a2
-      case Cons(h,t) => Cons(h, append(t, a2))
-    }
+    foldLeft(reverse(a1), a2)((xs: List[A], y: A) => Cons(y, xs))
 
-  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = // Utility functions
-    as match {
-      case Nil => z
-      case Cons(x, xs) => f(x, foldRight(xs, z)(f))
-    }
+  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = 
+    foldLeft(as, z)((x, y) => f(y, x))
   
   def sum2(ns: List[Int]) = 
     foldRight(ns, 0)((x,y) => x + y)
@@ -74,13 +61,36 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
 
   def length[A](l: List[A]): Int = 
-    foldRight(l, 0)((x, y) => y + 1)
-
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = ???
+    foldLeft(l, 0)((x, y) => x + 1)
+  
+  @annotation.tailrec
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = 
+    l match {
+      case Nil => z
+      case Cons(h, t) => foldLeft(t, f(z, h))(f)
+    }
 
   def map[A,B](l: List[A])(f: A => B): List[B] = 
     l match {
       case Nil => Nil
       case Cons(h, t) => Cons(f(h), map(t)(f))
+    }
+
+  def toString[A](l: List[A]) = 
+    map(l)(_.toString)
+
+  def reverse[A](l: List[A]): List[A] =
+    foldLeft(l, Nil: List[A])((x, y) => Cons(y, x))
+
+  def flatten[A](lists: List[List[A]]): List[A] =
+    foldLeft(lists, Nil: List[A])(append(_, _))
+
+  def filter[A](as: List[A])(f: A => Boolean): List[A] =
+    flatMap(as)(x => if (f(x)) Cons(x, Nil) else Nil)
+
+  def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] =
+    l match {
+      case Nil => Nil
+      case Cons(h, t) => append(f(h), flatMap(t)(f))
     }
 }
