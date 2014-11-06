@@ -102,14 +102,14 @@ object List { // `List` companion object. Contains functions for creating and wo
 
   def hasSubsequence[A](as: List[A], subsequence: List[A]): Boolean = {
     val seed = (subsequence, false)
-    val (_, result) = foldRight(as, seed)((a, state) => {
+    val (_, result) = foldRight(as, seed) { (a, state) => 
       state match {
         case (_, true) => state
         case (Nil, false) => (subsequence, true)
         case (Cons(h, t), false) if (a == h) => (t, false)
         case _ => (subsequence, false)
       }
-    })
+    }
     result
   }
 }
