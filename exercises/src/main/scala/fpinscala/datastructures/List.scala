@@ -99,4 +99,17 @@ object List { // `List` companion object. Contains functions for creating and wo
       case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
       case _ => Nil
     }
+
+  def hasSubsequence[A](as: List[A], subsequence: List[A]): Boolean = {
+    val seed = (subsequence, false)
+    val (_, result) = foldRight(as, seed)((a, state) => {
+      state match {
+        case (_, true) => state
+        case (Nil, false) => (subsequence, true)
+        case (Cons(h, t), false) if (a == h) => (t, false)
+        case _ => (subsequence, false)
+      }
+    })
+    result
+  }
 }
