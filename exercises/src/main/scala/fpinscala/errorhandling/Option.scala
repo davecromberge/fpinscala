@@ -67,14 +67,11 @@ object Option {
     } yield f(a1, b1)
 
 
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = {
-    val seed: Option[List[A]] = Some(Nil)
-    a.foldRight(seed)((a, b) => a.flatMap(h => b.map(t => h :: t)))
-  }
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = traverse(a)(x => x)
 
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = {
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = {
     val seed: Option[List[B]] = Some(Nil)
-    a.foldRight(seed)((a, b) => f(a).flatMap(h => b.map(t => h :: t)))
+    as.foldLeft(seed)((acc, a) => map2(f(a), acc)((h, t) => h :: t))
   }
 
 }
