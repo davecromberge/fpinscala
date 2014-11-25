@@ -32,15 +32,23 @@ trait Stream[+A] {
     case _ => this
   }
 
-  def takeWhile(p: A => Boolean): Stream[A] = this match {
-    case Cons(h, t) if p(h()) => Cons(h, () => t().takeWhile(p))
-    case _ => Empty
+  def takeWhile(p: A => Boolean): Stream[A] = {
+
+    def combine(current: A, acc: => Stream[A]): Stream[A] = 
+      if (p(current))
+        Stream.cons(current, acc)
+      else acc
+
+    foldRight(Empty: Stream[A])(combine)
   }
 
   def forAll(p: A => Boolean): Boolean =
     foldRight(true)((a, b) => p(a) && b)
 
-  def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+  def startsWith[B](s: Stream[B]): Boolean = (this, s) match {
+    case (Cons(h1, t1), Cons(h2, t2)) => h1() == h2() && t1().startsWith(t2())
+    case _ => true
+  }
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
