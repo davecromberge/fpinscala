@@ -71,9 +71,10 @@ trait Stream[+A] {
     case _ => s
   }
 
-  def flatMap[B](f: A => Stream[B]): Stream[B] = sys.error("todo")
-  
+  def flatMap[B](f: A => Stream[B]): Stream[B] =
+    foldRight(Stream.empty[B])((a, b) => b.append(f(a)))
 }
+
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
