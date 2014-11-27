@@ -39,7 +39,7 @@ trait Stream[+A] {
         Stream.cons(current, acc)
       else acc
 
-    foldRight(Empty: Stream[A])(combine)
+    foldRight(Stream.empty[A])(combine)
   }
 
   def forAll(p: A => Boolean): Boolean =
