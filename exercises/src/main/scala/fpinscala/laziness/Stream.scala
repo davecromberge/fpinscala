@@ -58,9 +58,18 @@ trait Stream[+A] {
     case _ => Empty
   }
 
-  def filter(p: A => Boolean): Stream[A] = sys.error("todo")
+  def filter(p: A => Boolean): Stream[A] = this match {
+    case Cons(h, t) => {
+      lazy val head = h()
+      if (p(head)) Stream.cons(head, t().filter(p)) else t().filter(p)
+    }
+    case _ => Empty
+  }
 
-  def append[AA >: A](s: Stream[AA]): Stream[A] = sys.error("todo")
+  def append[AA >: A](s: Stream[AA]): Stream[AA] = this match {
+    case Cons(h, t) => Stream.cons(h(), t().append(s))
+    case _ => s
+  }
 
   def flatMap[B](f: A => Stream[B]): Stream[B] = sys.error("todo")
   
