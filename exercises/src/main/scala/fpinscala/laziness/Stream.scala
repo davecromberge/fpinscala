@@ -56,10 +56,8 @@ trait Stream[+A] {
   def forAll(p: A => Boolean): Boolean =
     foldRight(true)((a, b) => p(a) && b)
 
-  def startsWith[B](s: Stream[B]): Boolean = (this, s) match {
-    case (Cons(h1, t1), Cons(h2, t2)) => h1() == h2() && t1().startsWith(t2())
-    case _ => true
-  }
+  def startsWith[B](s: Stream[B]): Boolean = 
+    this.zipWith(s)((a,b) => a == b).forAll(_ == true)
 
   def headOption: Option[A] = 
     foldRight(None: Option[A])((a, b) => Some(a))
