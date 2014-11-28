@@ -86,18 +86,32 @@ object Stream {
     if (as.isEmpty) empty 
     else cons(as.head, apply(as.tail: _*))
 
-  val ones: Stream[Int] = constant(1)
+  val ones: Stream[Int] = 
+    unfold(0)(counter => Some((1, counter + 1)))
 
-  def constant[A](a: A): Stream[A] = Stream.cons(a, constant(a))
+  def constant[A](a: A): Stream[A] = 
+    unfold(0)(counter => Some((a, counter + 1)))
 
-  def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
+  def from(n: Int): Stream[Int] = 
+    unfold(n)(s => Some((s, s + 1)))
 
   def fibs: Stream[Int] = {
+    val seed = (0, 1)
+    unfold(seed) { 
+      case (current, prev) => Some(current+prev, (current+prev, current)) 
+    }
+  }
+  
+  {
     def fib(current: Int, previous: Int): Stream[Int] = 
       Stream.cons(current+previous, fib(current+previous, current))
     
     Stream.cons(1, Stream.cons(1, fib(1, 1)))
   }
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = 
+    f(z) match {
+      case Some((a, s)) => Stream.cons(a, unfold(s)(f))
+      case None => Stream.empty[A]
+    }
 }
