@@ -53,23 +53,18 @@ trait Stream[+A] {
   def headOption: Option[A] = 
     foldRight(None: Option[A])((a, b) => Some(a))
 
-  def map[B](f: A => B): Stream[B] = this match {
-    case Cons(h, t) => Stream.cons(f(h()), t().map(f))
-    case _ => Empty
-  }
+  def map[B](f: A => B): Stream[B] = 
+    foldRight(Stream.empty[B])((a, b) => Stream.cons(f(a), b))
 
-  def filter(p: A => Boolean): Stream[A] = this match {
-    case Cons(h, t) => {
-      lazy val head = h()
-      if (p(head)) Stream.cons(head, t().filter(p)) else t().filter(p)
+  def filter(p: A => Boolean): Stream[A] = 
+    foldRight(Stream.empty[A]) { (a, b) => 
+      if (p(a)) 
+        Stream.cons(a, b) 
+      else b
     }
-    case _ => Empty
-  }
-
-  def append[AA >: A](s: Stream[AA]): Stream[AA] = this match {
-    case Cons(h, t) => Stream.cons(h(), t().append(s))
-    case _ => s
-  }
+    
+  def append[AA >: A](s: Stream[AA]): Stream[AA] = 
+    foldRight(s)((a, b) => Stream.cons(a, b))
 
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(Stream.empty[B])((a, b) => b.append(f(a)))
