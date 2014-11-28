@@ -92,7 +92,12 @@ object Stream {
 
   def from(n: Int): Stream[Int] = Stream.cons(n, from(n + 1))
 
-  def fibs: Stream[Int] = sys.error("todo")
+  def fibs: Stream[Int] = {
+    def fib(current: Int, previous: Int): Stream[Int] = 
+      Stream.cons(current+previous, fib(current+previous, current))
+    
+    Stream.cons(1, Stream.cons(1, fib(1, 1)))
+  }
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
 }
