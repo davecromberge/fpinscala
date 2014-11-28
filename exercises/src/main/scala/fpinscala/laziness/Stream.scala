@@ -78,6 +78,15 @@ trait Stream[+A] {
   def append[AA >: A](s: Stream[AA]): Stream[AA] = 
     foldRight(s)((a, b) => Stream.cons(a, b))
 
+  def tails: Stream[Stream[A]] =
+    unfold(this) {
+      case s@Cons(_, t) => Some(s, t())
+      case _ => None
+    }
+
+  def hasSubsequence[A](s: Stream[A]) =
+    tails.exists(_.startsWith(s))
+
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(Stream.empty[B])((a, b) => b.append(f(a)))
 }
