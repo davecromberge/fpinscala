@@ -78,11 +78,19 @@ trait Stream[+A] {
   def append[AA >: A](s: Stream[AA]): Stream[AA] = 
     foldRight(s)((a, b) => Stream.cons(a, b))
 
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = {
+    
+    def suffixes: Stream[Stream[A]] =
+      unfold(this) {
+        case s@Cons(_, t) => Some(s, t())
+        case _ => None
+      }
+
+    suffixes.map(_.foldRight(z)(f))
+  }
+
   def tails: Stream[Stream[A]] =
-    unfold(this) {
-      case s@Cons(_, t) => Some(s, t())
-      case _ => None
-    }
+    scanRight(Stream.empty[A])((a, b) => Stream.cons(a, b))
 
   def hasSubsequence[A](s: Stream[A]) =
     tails.exists(_.startsWith(s))
@@ -123,13 +131,6 @@ object Stream {
     }
   }
   
-  {
-    def fib(current: Int, previous: Int): Stream[Int] = 
-      Stream.cons(current+previous, fib(current+previous, current))
-    
-    Stream.cons(1, Stream.cons(1, fib(1, 1)))
-  }
-
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = 
     f(z) match {
       case Some((a, s)) => Stream.cons(a, unfold(s)(f))
