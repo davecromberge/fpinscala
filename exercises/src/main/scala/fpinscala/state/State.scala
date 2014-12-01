@@ -128,10 +128,16 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
 
-  def unit[A, S](a: A): State[S, A] = State(s => (a, s))
+  def unit[A, SS >: A](a: A): State[SS, A] = State((s: SS) => (a, s))
 
-  def sequence[A, S](states: List[State[S, A]]): State[S, List[A]] = ???
+  def sequence[A, S](states: List[State[S, A]]): State[S, List[A]] = {
+    val acc = State((s: S) => (Nil: List[A], s))
+    states.foldRight(acc) { (a: State[S, A], b: State[S, List[A]]) =>
+      a.map2(b)(_ :: _)
+    }
+  }
 
   type Rand[A] = State[RNG, A]
+
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
 }
