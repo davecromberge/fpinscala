@@ -118,6 +118,10 @@ case class State[S,+A](run: S => (A, S)) {
       val (b, s3) = f(a).run(s2)
       (b, s3)
     })
+
+  def get: State[S, S] = State(s => (s, s))
+
+  def set(s: S): State[S, Unit] = State(_ => ((), s))
 }
 
 sealed trait Input
@@ -139,10 +143,6 @@ object State {
 
   type Rand[A] = State[RNG, A]
 
-  // def get[S]: State[S, S] = State(s => (s, s))
-
-  // def set[S](s: S): State[S, Unit] = State(_ => ((), s))
-
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
     
     def processInput(input: Input): State[Machine, Unit] =
@@ -154,6 +154,9 @@ object State {
         case _ => ((), state)
       })
 
-    null
+    State
+      .sequence(inputs.map(processInput))
+      .get
+      .map(machine => (machine.candies, machine.coins))
   }
 }
