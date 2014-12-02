@@ -139,5 +139,21 @@ object State {
 
   type Rand[A] = State[RNG, A]
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+  // def get[S]: State[S, S] = State(s => (s, s))
+
+  // def set[S](s: S): State[S, Unit] = State(_ => ((), s))
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
+    
+    def processInput(input: Input): State[Machine, Unit] =
+      State(state => input match {
+        case Coin if (state.locked == true) && (state.candies > 0) => 
+          ((), state.copy(locked = false, coins = state.coins+1))
+        case Turn if (state.locked == false) =>
+          ((), state.copy(locked = true, candies = state.candies-1))
+        case _ => ((), state)
+      })
+
+    null
+  }
 }
