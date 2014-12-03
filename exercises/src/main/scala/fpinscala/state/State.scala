@@ -119,7 +119,10 @@ case class State[S,+A](run: S => (A, S)) {
       (b, s3)
     })
 
-  def get: State[S, S] = State(s => (s, s))
+  def get: State[S, S] = State(s => {
+    val (contents, state) = run(s)
+    (state, state)
+  })
 
   def set(s: S): State[S, Unit] = State(_ => ((), s))
 }
