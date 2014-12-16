@@ -16,7 +16,7 @@ object Par {
     def cancel(evenIfRunning: Boolean): Boolean = false 
   }
 
-  private case class Map2Future[A, B, C](a: Future[A], b: Future[B], f: (A, b) => C) extends Future[C] {
+  private case class Map2Future[A, B, C](a: Future[A], b: Future[B], f: (A, B) => C) extends Future[C] {
     var cache: Option[C] = None
     def isDone = cache.isDefined
     def get(timeout: Long, units: TimeUnit) = 
@@ -39,11 +39,8 @@ object Par {
   }
   
   def map2[A,B,C](a: Par[A], b: Par[B])(f: (A,B) => C): Par[C] = 
-    (es: ExecutorService) => {
-      val af = a(es) 
-      val bf = b(es)
-      Map2Future(af, bf, f)
-    }
+    (es: ExecutorService) => 
+      Map2Future(a(es), b(es), f)
   
   def fork[A](a: => Par[A]): Par[A] = 
     es => es.submit(new Callable[A] { 
