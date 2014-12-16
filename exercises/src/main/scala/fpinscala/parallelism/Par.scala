@@ -7,8 +7,12 @@ object Par {
   
   def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
 
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
+
   def unit[A](a: A): Par[A] = (es: ExecutorService) => UnitFuture(a) 
   
+  def asyncF[A, B](f: A => B): A => Par[B] = (a: A) => lazyUnit(f(a))
+
   private case class UnitFuture[A](get: A) extends Future[A] {
     def isDone = true 
     def get(timeout: Long, units: TimeUnit) = get 
