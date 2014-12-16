@@ -15,12 +15,34 @@ object Par {
     def isCancelled = false 
     def cancel(evenIfRunning: Boolean): Boolean = false 
   }
+
+  private case class Map2Future[A, B, C](a: Future[A], b: Future[B], f: (A, b) => C) extends Future[C] {
+    var cache: Option[C] = None
+    def isDone = cache.isDefined
+    def get(timeout: Long, units: TimeUnit) = 
+      compute(TimeUnit.MILLISECONDS.convert(timeout, units))
+    def get = compute(Long.MaxValue)
+    def isCancelled = a.isCancelled || b.isCancelled
+    def cancel(evenIfRunning: Boolean): Boolean = 
+      a.cancel(evenIfRunning) || b.cancel(evenIfRunning)
+
+    private def compute(timeoutMs: Long): C = cache match {
+      case Some(c) => c
+      case None =>
+        val start = System.currentTimeMillis
+        val ar = a.get(timeoutMs, TimeUnit.MILLISECONDS)
+        val runTime = System.currentTimeMillis - start
+        val br = b.get(timeoutMs - runTime, TimeUnit.MILLISECONDS)
+        cache = Some(f(ar, br))
+        cache.get
+    }
+  }
   
   def map2[A,B,C](a: Par[A], b: Par[B])(f: (A,B) => C): Par[C] = 
     (es: ExecutorService) => {
       val af = a(es) 
       val bf = b(es)
-      UnitFuture(f(af.get, bf.get)) 
+      Map2Future(af, bf, f)
     }
   
   def fork[A](a: => Par[A]): Par[A] = 
