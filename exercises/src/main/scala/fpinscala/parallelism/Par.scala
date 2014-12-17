@@ -25,8 +25,10 @@ object Par {
 
   def parFilter[A](ps: List[A])(f: A => Boolean): Par[List[A]] = {
     val p = parMap(ps)(a => (a, f(a)))
-    map(p)(xs => xs.filter { case (a, b) =>
-      b == true }.map(_._1))
+    map(p)(xs => 
+      xs.filter { case (a, b) => b == true }
+        .map(_._1)
+    )
   }
 
   private case class UnitFuture[A](get: A) extends Future[A] {
