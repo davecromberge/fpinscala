@@ -18,6 +18,16 @@ object Par {
     ps.foldRight(seed)((a, b) => Par.map2(a, b)(_ :: _))
   }
 
+  def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork {
+    val fbs = ps.map(asyncF(f))
+    sequence(fbs)
+  }
+
+  def parFilter[A](ps: List[A])(f: A => Boolean): Par[List[A]] = {
+    val p = parMap(ps)(a => (a, f(a)))
+    map(p)(xs => xs.filter { case (a, b) =>
+      b == true }.map(_._1))
+  }
 
   private case class UnitFuture[A](get: A) extends Future[A] {
     def isDone = true 
