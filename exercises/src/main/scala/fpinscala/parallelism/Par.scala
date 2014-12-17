@@ -13,6 +13,12 @@ object Par {
   
   def asyncF[A, B](f: A => B): A => Par[B] = (a: A) => lazyUnit(f(a))
 
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] = {
+    val seed = Par.unit(Nil: List[A])
+    ps.foldRight(seed)((a, b) => Par.map2(a, b)(_ :: _))
+  }
+
+
   private case class UnitFuture[A](get: A) extends Future[A] {
     def isDone = true 
     def get(timeout: Long, units: TimeUnit) = get 
