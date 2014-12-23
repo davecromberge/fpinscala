@@ -122,18 +122,22 @@ object Nonblocking {
      * about `t(es)`? What about `t(es)(cb)`?
      */
     def choice[A](p: Par[Boolean])(f: Par[A], t: Par[A]): Par[A] =
+      choiceN(p.map { 
+        case false => 0
+        case true => 1
+      })(List(f, t))
+
+    def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
       es => new Future[A] {
         def apply(cb: A => Unit): Unit =
-          p(es) { b =>
-            if (b) eval(es) { t(es)(cb) }
-            else eval(es) { t(es)(cb) }
-          }
+          p(es) { i => ps(i)(es)(cb) }
       }
 
-    def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] = ???
-
     def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
-      ???
+      choiceN(a.map {
+        case false => 0
+        case true => 1
+      })(List(ifFalse, ifTrue))
 
     def choiceMap[K,V](p: Par[K])(ps: Map[K,Par[V]]): Par[V] =
       ???
