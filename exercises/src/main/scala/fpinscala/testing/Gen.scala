@@ -26,7 +26,7 @@ object Prop {
 
 case class Gen[A](sample: State[RNG,A]) {
 
-  def map[A,B](f: A => B): Gen[B] = ???
+  def map[B](f: A => B): Gen[B] = Gen(sample.map(f))
 
   def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
 }
@@ -38,11 +38,9 @@ object Gen {
     Gen(State(rng => RNG.rangedInt(rng)(start, stopExclusive)))
 
   def boolean: Gen[Boolean] = 
-    Gen(State { rng => 
-      val (i, rng2) = RNG.nonNegativeInt(rng)
-      if (i % 2 == 0) (false, rng2)
-      else (true, rng2)
-    })
+    Gen.choose(0, 1000).map(x => if (x % 2 == 0) false else true)
+
+  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = ???
 }
 
 trait SGen[+A] {
