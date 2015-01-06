@@ -16,7 +16,7 @@ shell, which you can fill in and modify while working through the chapter.
 trait Prop { self =>
   def check: Boolean
   def &&(p: Prop): Prop = new Prop {
-    def check = self.check && p.check 
+    def check = self.check && p.check
   }
 }
 
@@ -34,13 +34,14 @@ case class Gen[A](sample: State[RNG,A]) {
 object Gen {
   def unit[A](a: => A): Gen[A] = Gen(State(rng => (a, rng)))
 
-  def choose(start: Int, stopExclusive: Int): Gen[Int] = 
+  def choose(start: Int, stopExclusive: Int): Gen[Int] =
     Gen(State(rng => RNG.rangedInt(rng)(start, stopExclusive)))
 
-  def boolean: Gen[Boolean] = 
-    Gen.choose(0, 1000).map(x => if (x % 2 == 0) false else true)
+  def boolean: Gen[Boolean] =
+    Gen.choose(Int.MinValue, Int.MaxValue).map(x => if (x % 2 == 0) false else true)
 
-  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = ???
+  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+    Gen(State.sequence(List.fill(n)(g.sample)))
 }
 
 trait SGen[+A] {
