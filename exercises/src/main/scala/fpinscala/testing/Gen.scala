@@ -24,18 +24,25 @@ object Prop {
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
 }
 
-case class Gen2[A](sample: State[RNG,A])
+case class Gen[A](sample: State[RNG,A]) {
 
-object Gen {
-  def unit[A](a: => A): Gen[A] = ???
+  def map[A,B](f: A => B): Gen[B] = ???
 
-  def choose(start: Int, stopExclusive: Int): Gen2[Int] = 
-    Gen2(State(rng => RNG.rangedInt(rng)(start, stopExclusive)))
+  def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
 }
 
-trait Gen[A] {
-  def map[A,B](f: A => B): Gen[B] = ???
-  def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
+object Gen {
+  def unit[A](a: => A): Gen[A] = Gen(State(rng => (a, rng)))
+
+  def choose(start: Int, stopExclusive: Int): Gen[Int] = 
+    Gen(State(rng => RNG.rangedInt(rng)(start, stopExclusive)))
+
+  def boolean: Gen[Boolean] = 
+    Gen(State { rng => 
+      val (i, rng2) = RNG.nonNegativeInt(rng)
+      if (i % 2 == 0) (false, rng2)
+      else (true, rng2)
+    })
 }
 
 trait SGen[+A] {
