@@ -37,6 +37,14 @@ object RNG {
     else (intValue, rng2)
   }
 
+  def rangedInt(rng: RNG)(start: Int, stopExclusive: Int): (Int, RNG) = {
+    val (intValue, rng2) = int(rng)
+    if (intValue >= start && intValue < stopExclusive)
+      (intValue, rng2)
+    else
+      rangedInt(rng2)(start, stopExclusive)
+  }
+
   def double(rng: RNG): (Double, RNG) = 
     map(s => nonNegativeInt(s))(_.toDouble / Int.MaxValue.toDouble)(rng)
 

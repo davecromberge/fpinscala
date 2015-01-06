@@ -13,17 +13,24 @@ The library developed in this chapter goes through several iterations. This file
 shell, which you can fill in and modify while working through the chapter.
 */
 
-trait Prop {
+trait Prop { self =>
   def check: Boolean
-  def &&(p: Prop): Prop = check && p.check
+  def &&(p: Prop): Prop = new Prop {
+    def check = self.check && p.check 
+  }
 }
 
 object Prop {
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
 }
 
+case class Gen2[A](sample: State[RNG,A])
+
 object Gen {
   def unit[A](a: => A): Gen[A] = ???
+
+  def choose(start: Int, stopExclusive: Int): Gen2[Int] = 
+    Gen2(State(rng => RNG.rangedInt(rng)(start, stopExclusive)))
 }
 
 trait Gen[A] {
