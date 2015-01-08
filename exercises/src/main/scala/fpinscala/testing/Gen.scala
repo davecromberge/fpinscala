@@ -13,14 +13,45 @@ The library developed in this chapter goes through several iterations. This file
 shell, which you can fill in and modify while working through the chapter.
 */
 
-trait Prop { self =>
-  def check: Boolean
-  def &&(p: Prop): Prop = new Prop {
-    def check = self.check && p.check
+
+sealed trait Result {
+  def isFalsified: Boolean
+}
+
+case object Passed extends Result {
+  def isFalsified = false
+}
+
+import Prop._
+
+case class Falsified(
+  failure: FailedCase, successes: SuccessCount) extends Result {
+
+  def isFalsified = true
+}
+
+case class Prop(run: (TestCases, RNG) => Result) {
+
+  // todo: create a tag on the failed result to allow tracking
+  def &&(p: Prop): Prop = Prop { (n,rng) =>
+    lazy val r1 = run(n, rng)
+    lazy val r2 = p.run(n,rng)
+    if (r1 != Passed) r1 else r2
+  }
+
+  // todo: create a tag on the failed result to allow tracking
+  def ||(p: Prop): Prop = Prop { (n,rng) =>
+    lazy val r1 = run(n, rng)
+    lazy val r2 = run(n, rng)
+    if (r1 == Passed) r2 else r1
   }
 }
 
 object Prop {
+  type TestCases = Int
+  type FailedCase = String
+  type SuccessCount = Int
+
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
 }
 
