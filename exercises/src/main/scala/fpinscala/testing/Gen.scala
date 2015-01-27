@@ -65,6 +65,8 @@ case class Gen[A](sample: State[RNG,A]) {
       val (b, rng3) = f(a).sample.run(rng2)
       (b, rng3)
     })
+
+  def unsized: SGen[A] = SGen(_ => this)
 }
 
 object Gen {
@@ -87,7 +89,7 @@ object Gen {
     val (gen2, p2) = g2
     require(p1 + p2 == 1)
 
-    choose(0, Int.MaxValue).flatMap { x => 
+    choose(0, Int.MaxValue).flatMap { x =>
       val p1v = p1 * Int.MaxValue
       val p2v = p2 * Int.MaxValue
       if (x < p1v) gen1 else gen2
@@ -105,12 +107,10 @@ object Gen {
   def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
     Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
 
-  def buildMsg[A](s: A, e: Exception): String = 
-    s"test case: $s\n" + 
+  def buildMsg[A](s: A, e: Exception): String =
+    s"test case: $s\n" +
     s"generanted an exception: ${e.getMessage}\n" +
     s"stack tracte:\n ${e.getStackTrace.mkString("\n")}"
-
-  def unsized[A]: SGen[A] = ???
 }
 
 case class SGen[A](forSize: Int => Gen[A])
