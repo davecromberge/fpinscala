@@ -122,7 +122,7 @@ object Nonblocking {
      * about `t(es)`? What about `t(es)(cb)`?
      */
     def choice[A](p: Par[Boolean])(f: Par[A], t: Par[A]): Par[A] =
-      choiceN(p.map { 
+      choiceN(p.map {
         case false => 0
         case true => 1
       })(List(f, t))
@@ -130,7 +130,10 @@ object Nonblocking {
     def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
       es => new Future[A] {
         def apply(cb: A => Unit): Unit =
-          p(es) { i => ps(i)(es)(cb) }
+          p(es) { b =>
+            if (b) eval(es) { t(es)(cb) }
+            else eval(es) { f(es)(cb) }
+          }
       }
 
     def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
@@ -147,7 +150,7 @@ object Nonblocking {
 
     // see `Nonblocking.scala` answers file. This function is usually called something else!
     def chooser[A,B](p: Par[A])(f: A => Par[B]): Par[B] =
-      ec => new Future[B] { 
+      ec => new Future[B] {
         def apply(cb: B => Unit): Unit =
           p(ec) { a => f(a)(ec)(cb) }
       }
