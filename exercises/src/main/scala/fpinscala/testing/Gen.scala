@@ -113,5 +113,12 @@ object Gen {
     s"stack tracte:\n ${e.getStackTrace.mkString("\n")}"
 }
 
-case class SGen[A](forSize: Int => Gen[A])
+case class SGen[A](forSize: Int => Gen[A]) {
+
+  def map[B](f: A => B): SGen[B] =
+    SGen(size => forSize(size).map(f))
+
+  def flatMap[B](f: A => Gen[B]): SGen[B] =
+    SGen(size => forSize(size).flatMap(f))
+}
 
