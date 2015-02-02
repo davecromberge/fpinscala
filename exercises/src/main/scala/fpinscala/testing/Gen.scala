@@ -8,41 +8,20 @@ import Gen._
 import Prop._
 import java.util.concurrent.{Executors,ExecutorService}
 
-/*
-The library developed in this chapter goes through several iterations. This file is just the
-shell, which you can fill in and modify while working through the chapter.
-*/
 
-
-sealed trait Result {
-  def isFalsified: Boolean
-}
-
-case object Passed extends Result {
-  def isFalsified = false
-}
-
-import Prop._
-
-case class Falsified(
-  failure: FailedCase, successes: SuccessCount) extends Result {
-
-  def isFalsified = true
-}
-
-case class Prop(run: (TestCases, RNG) => Result) {
+case class Prop(run: (Int, TestCases, RNG) => Result) {
 
   // todo: create a tag on the failed result to allow tracking
-  def &&(p: Prop): Prop = Prop { (n,rng) =>
-    lazy val r1 = run(n, rng)
-    lazy val r2 = p.run(n,rng)
+  def &&(p: Prop): Prop = Prop { (maxsize, n,rng) =>
+    lazy val r1 = run(maxsize, n, rng)
+    lazy val r2 = p.run(maxsize, n,rng)
     if (r1 != Passed) r1 else r2
   }
 
   // todo: create a tag on the failed result to allow tracking
-  def ||(p: Prop): Prop = Prop { (n,rng) =>
-    lazy val r1 = run(n, rng)
-    lazy val r2 = run(n, rng)
+  def ||(p: Prop): Prop = Prop { (maxsize, n,rng) =>
+    lazy val r1 = run(maxsize, n, rng)
+    lazy val r2 = run(maxsize, n, rng)
     if (r1 == Passed) r2 else r1
   }
 }
@@ -52,7 +31,55 @@ object Prop {
   type FailedCase = String
   type SuccessCount = Int
 
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
+  sealed trait Result {
+    def isFalsified: Boolean
+  }
+
+  case object Passed extends Result {
+    def isFalsified = false
+  }
+
+  case class Falsified(failure: FailedCase,
+                       successes: SuccessCount) extends Result {
+
+    def isFalsified = true
+  }
+
+  /* Produce an infinite random stream from a `Gen` and a starting `RNG`. */
+  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
+    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
+
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
+    (n,rng) => randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
+      case (a, i) => try {
+        if (f(a)) Passed else Falsified(a.toString, i)
+      } catch { case e: Exception => Falsified(buildMsg(a, e), i) }
+    }.find(_.isFalsified).getOrElse(Passed)
+  }
+
+  def buildMsg[A](s: A, e: Exception): String =
+    s"test case: $s\n" +
+    s"generated an exception: ${e.getMessage}\n" +
+    s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
+
+  def apply(f: (TestCases,RNG) => Result): Prop =
+    Prop { (_,n,rng) => f(n,rng) }
+
+  def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
+    forAll(g(_))(f)
+
+  def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop = Prop {
+    (max,n,rng) =>
+      val casesPerSize = (n - 1) / max + 1
+      val props: Stream[Prop] =
+        Stream.from(0).take((n min max) + 1).map(i => forAll(g(i))(f))
+      val prop: Prop =
+        props.map(p => Prop { (max, n, rng) =>
+          p.run(max, casesPerSize, rng)
+        }).toList.reduce(_ && _)
+      prop.run(max,n,rng)
+  }
+
 }
 
 case class Gen[A](sample: State[RNG,A]) {
@@ -95,31 +122,17 @@ object Gen {
       if (x < p1v) gen1 else gen2
     }
   }
-
-  def forall[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
-    (n,rng) => randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
-      case (a,i) => try {
-        if (f(a)) Passed else Falsified(a.toString, i)
-      } catch { case e: Exception => Falsified(buildMsg(a, e), i) }
-    }.find(_.isFalsified).getOrElse(Passed)
-  }
-
-  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
-    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
-
-  def buildMsg[A](s: A, e: Exception): String =
-    s"test case: $s\n" +
-    s"generanted an exception: ${e.getMessage}\n" +
-    s"stack tracte:\n ${e.getStackTrace.mkString("\n")}"
 }
 
-case class SGen[A](forSize: Int => Gen[A]) {
+case class SGen[A](g: Int => Gen[A]) {
+
+  def apply(n: Int): Gen[A] = g(n)
 
   def map[B](f: A => B): SGen[B] =
-    SGen(size => forSize(size).map(f))
+    SGen(size => g(size).map(f))
 
   def flatMap[B](f: A => Gen[B]): SGen[B] =
-    SGen(size => forSize(size).flatMap(f))
+    SGen(size => g(size).flatMap(f))
 }
 
 object SGen {
