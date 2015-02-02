@@ -121,19 +121,20 @@ object Nonblocking {
      * through the implementation. What is the type of `p(es)`? What
      * about `t(es)`? What about `t(es)(cb)`?
      */
-    def choice[A](p: Par[Boolean])(f: Par[A], t: Par[A]): Par[A] =
-      choiceN(p.map {
-        case false => 0
-        case true => 1
-      })(List(f, t))
-
-    def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
+    def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
       es => new Future[A] {
         def apply(cb: A => Unit): Unit =
           p(es) { b =>
             if (b) eval(es) { t(es)(cb) }
             else eval(es) { f(es)(cb) }
           }
+      }
+
+    /* The code here is very similar. */
+    def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
+      es => new Future[A] {
+        def apply(cb: A => Unit): Unit =
+          p(es) { ind => eval(es) { ps(ind)(es)(cb) }}
       }
 
     def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
