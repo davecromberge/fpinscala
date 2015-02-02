@@ -39,6 +39,10 @@ object Prop {
     def isFalsified = false
   }
 
+  case object Proved extends Result {
+    def isFalsified = false
+  }
+
   case class Falsified(failure: FailedCase,
                        successes: SuccessCount) extends Result {
 
@@ -80,6 +84,18 @@ object Prop {
       prop.run(max,n,rng)
   }
 
+  def run(p: Prop,
+          maxSize: Int = 100,
+          testCases: Int = 100,
+          rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
+    p.run(maxSize, testCases, rng) match {
+      case Falsified(msg, n) =>
+        println(s"! Falsified after $n passed tests:\n $msg")
+      case Passed =>
+        println(s"+ OK, passed $testCases tests.")
+      case Proved =>
+        println(s"+ OK, proved property.")
+    }
 }
 
 case class Gen[A](sample: State[RNG,A]) {
@@ -94,6 +110,11 @@ case class Gen[A](sample: State[RNG,A]) {
     })
 
   def unsized: SGen[A] = SGen(_ => this)
+
+  def listOfN(size: Int): Gen[List[A]] =
+    Gen.listOfN(size, this)
+
+  def listOf: SGen[List[A]] = Gen.listOf(this)
 }
 
 object Gen {
@@ -108,9 +129,6 @@ object Gen {
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     weighted((g1, 0.5), (g2, 0.5))
 
-  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
-    Gen(State.sequence(List.fill(n)(g.sample)))
-
   def weighted[A](g1: (Gen[A],Double), g2: (Gen[A],Double)): Gen[A] = {
     val (gen1, p1) = g1
     val (gen2, p2) = g2
@@ -122,6 +140,12 @@ object Gen {
       if (x < p1v) gen1 else gen2
     }
   }
+
+  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+    Gen(State.sequence(List.fill(n)(g.sample)))
+
+  def listOf[A](g: Gen[A]): SGen[List[A]] =
+    SGen(n => g.listOfN(n))
 }
 
 case class SGen[A](g: Int => Gen[A]) {
