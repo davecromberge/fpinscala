@@ -12,14 +12,14 @@ import java.util.concurrent.{Executors,ExecutorService}
 case class Prop(run: (Int, TestCases, RNG) => Result) {
 
   // todo: create a tag on the failed result to allow tracking
-  def &&(p: Prop): Prop = Prop { (maxsize, n,rng) =>
+  def &&(p: Prop): Prop = Prop { (maxsize, n, rng) =>
     lazy val r1 = run(maxsize, n, rng)
     lazy val r2 = p.run(maxsize, n,rng)
     if (r1 != Passed) r1 else r2
   }
 
   // todo: create a tag on the failed result to allow tracking
-  def ||(p: Prop): Prop = Prop { (maxsize, n,rng) =>
+  def ||(p: Prop): Prop = Prop { (maxsize, n, rng) =>
     lazy val r1 = run(maxsize, n, rng)
     lazy val r2 = run(maxsize, n, rng)
     if (r1 == Passed) r2 else r1

@@ -40,7 +40,7 @@ object MyModule {
 
   def fib(n: Int): Int = {
     @annotation.tailrec
-    def go(n: Int, current: Int, previous: Int): Int = 
+    def go(n: Int, current: Int, previous: Int): Int =
       if (n == 0) previous
       else go(n-1, current+previous, current)
     go(n, 1, 0)
@@ -149,7 +149,7 @@ object PolymorphicFunctions {
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
   def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = as match {
-    case Array(h, h2, _) => !gt(h, h2) && isSorted(as.drop(2), gt)
+    case Array(h1, h2, _) => !gt(h1, h2) && isSorted(as.drop(2), gt)
     case _ => true
   }
 
