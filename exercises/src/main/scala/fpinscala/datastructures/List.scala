@@ -8,9 +8,16 @@ which may be `Nil` or another `Cons`.
 case class Cons[+A](head: A, tail: List[A]) extends List[A]
 
 object List { // `List` companion object. Contains functions for creating and working with lists.
-  def sum(ints: List[Int]): Int = foldLeft(ints, 0)(_ + _)
+  def sum(ints: List[Int]): Int = ints match { // A function that uses pattern matching to add up a list of integers
+    case Nil => 0 // The sum of the empty list is 0.
+    case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
+  }
 
-  def product(ints: List[Int]): Int = foldLeft(ints, 1)(_ * _)
+  def product(ds: List[Double]): Double = ds match {
+    case Nil => 1.0
+    case Cons(0.0, _) => 0.0
+    case Cons(x,xs) => x * product(xs)
+  }
 
   def apply[A](as: A*): List[A] = // Variadic function syntax
     if (as.isEmpty) Nil

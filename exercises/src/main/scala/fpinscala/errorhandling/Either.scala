@@ -28,6 +28,7 @@ sealed trait Either[+E,+A] {
      bb <- b
    } yield f(aa, bb)
 }
+
 case class Left[+E](get: E) extends Either[E,Nothing]
 case class Right[+A](get: A) extends Either[Nothing,A]
 
@@ -53,5 +54,4 @@ object Either {
     val seed: Either[E, List[B]] = Right(Nil)
     as.foldLeft(seed)((acc, a) => f(a).map2(acc)((h, t) => h :: t))
   }
-
 }
